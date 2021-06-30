@@ -1,7 +1,0 @@
-com\tuling\tulingmall\client\SimpleCanalClientExample.class
-com\tuling\tulingmall\mq\RefreshCacheListener.class
-com\tuling\tulingmall\util\ClassUtil.class
-com\tuling\tulingmall\config\RedisConifg.class
-com\tuling\tulingmall\domain\PmsProductParam.class
-com\tuling\tulingmall\TulingmallCanalApplication.class
-com\tuling\tulingmall\util\RedisOpsUtil.class
