@@ -1,4 +1,4 @@
-package com.tuling.tulingmall.Component;
+package com.tuling.tulingmall.component;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.ServiceInstance;
@@ -29,6 +29,7 @@ public class TulingRestTemplate extends RestTemplate {
         this.discoveryClient = discoveryClient;
     }
 
+    @Override
     protected <T> T doExecute(URI url, @Nullable HttpMethod method, @Nullable RequestCallback requestCallback,
                               @Nullable ResponseExtractor<T> responseExtractor) throws RestClientException {
 

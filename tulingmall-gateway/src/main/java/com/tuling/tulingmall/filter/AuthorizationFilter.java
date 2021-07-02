@@ -1,7 +1,7 @@
 package com.tuling.tulingmall.filter;
 
 import com.alibaba.fastjson.JSON;
-import com.tuling.tulingmall.Component.TulingRestTemplate;
+import com.tuling.tulingmall.component.TulingRestTemplate;
 import com.tuling.tulingmall.common.api.ResultCode;
 import com.tuling.tulingmall.common.exception.GateWayException;
 import com.tuling.tulingmall.properties.NotAuthUrlProperties;

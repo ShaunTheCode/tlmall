@@ -1,6 +1,6 @@
 package com.tuling.tulingmall.config;
 
-import com.tuling.tulingmall.Component.TulingRestTemplate;
+import com.tuling.tulingmall.component.TulingRestTemplate;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
