@@ -39,7 +39,6 @@
 		<docker.host>http://192.168.6.132:2375</docker.host>
 		<docker.maven.plugin.version>1.1.0</docker.maven.plugin.version>
 		<java.version>1.8</java.version>
-
 		<pagehelper-starter.version>1.2.10</pagehelper-starter.version>
 		<pagehelper.version>5.1.8</pagehelper.version>
 		<druid.version>1.1.10</druid.version>
@@ -56,7 +55,7 @@
 		<tulingmall-common.version>1.0-SNAPSHOT</tulingmall-common.version>
 		<tulingmall-mbg.version>1.0-SNAPSHOT</tulingmall-mbg.version>
 		<tulingmall-security.version>1.0-SNAPSHOT</tulingmall-security.version>
-
+		<nacos-discovery.version>2.1.1.RELEASE</nacos-discovery.version>
 		<spring-cloud.version>Greenwich.SR3</spring-cloud.version>
 		<spring-cloud-alibaba.version>2.1.2.RELEASE</spring-cloud-alibaba.version>
 	</properties>
@@ -83,7 +82,7 @@
 			<dependency>
 				<groupId>com.alibaba.cloud</groupId>
 				<artifactId>spring-cloud-alibaba-nacos-discovery</artifactId>
-				<version>2.1.1.RELEASE</version>
+				<version>${nacos-discovery.version}</version>
 			</dependency>
 			<!--mall通用模块-->
 			<dependency>
@@ -191,31 +190,11 @@
 
 	<repositories>
 		<repository>
-			<id>aliyun</id>
-			<url>https://maven.aliyun.com/repository/public</url>
+			<id>sonatype-nexus</id>
+			<url>https://oss.sonatype.org/content/repositories/releases</url>
 			<releases>
 				<enabled>true</enabled>
 			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>repo1</id>
-			<name>Human Readable Name for this Mirror.</name>
-			<url>https://repo1.maven.org/maven2/</url>
 		</repository>
 	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>aliyun-plugin</id>
-			<url>https://maven.aliyun.com/repository/public</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-	</pluginRepositories>
 </project>
