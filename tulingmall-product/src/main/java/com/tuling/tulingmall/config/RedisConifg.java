@@ -8,8 +8,12 @@ import com.tuling.tulingmall.dao.FlashPromotionProductDao;
 import com.tuling.tulingmall.domain.FlashPromotionParam;
 import com.tuling.tulingmall.util.RedisOpsUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -18,7 +22,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,6 +37,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Configuration
 public class RedisConifg implements InitializingBean {
+
+    @Value(value = "${spring.redis.cluster.nodes}")
+    private String redisNodes;
 
     @Autowired
     private RedisConnectionFactory connectionFactory;
@@ -94,5 +103,16 @@ public class RedisConifg implements InitializingBean {
     }
 
 
+    @Bean
+    public RedissonClient redissonClient(){
+        List<String> clusterNodes = new ArrayList<>();
+        String[] nodes=redisNodes.split(",");
+        for (int i = 0; i < nodes.length; i++) {
+            clusterNodes.add("redis://" + nodes[i]);
+        }
+        Config config=new Config();
+        config.useClusterServers().addNodeAddress(clusterNodes.toArray(new String[clusterNodes.size()])).setPassword("111111");
+        return Redisson.create(config);
+    }
 
 }

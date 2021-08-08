@@ -17,16 +17,17 @@ import com.tuling.tulingmall.service.PmsProductService;
 import com.tuling.tulingmall.util.DateUtil;
 import com.tuling.tulingmall.util.RedisOpsUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.Redisson;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -79,13 +80,19 @@ public class PmsProductServiceImpl implements PmsProductService {
     private String lockPath = "/load_db";
 
 
+    @Autowired
+    private RedissonClient redisson;
+
+    private static final String PRODUCT_CACHE_PREFIX = "tuling:product:detail:";
+
+
     /**
      * 获取商品详情信息
      *
      * @param id 产品ID
      */
     public PmsProductParam getProductInfo(Long id) {
-        return getProductInfo1(id);
+        return getProductInfo4(id);
     }
 
     /***
@@ -123,15 +130,74 @@ public class PmsProductServiceImpl implements PmsProductService {
         if (null != productInfo) {
             return productInfo;
         }
-        productInfo = portalProductDao.getProductInfo(id);
-        if (null == productInfo) {
-            log.warn("没有查询到商品信息,id:" + id);
-            return null;
+        RLock lock = redisson.getLock(PRODUCT_CACHE_PREFIX + id);
+        try {
+            if (lock.tryLock(100, 30, TimeUnit.SECONDS)) {
+                System.out.println("查询走数据库" + id);
+                productInfo = portalProductDao.getProductInfo(id);
+                if (null == productInfo) {
+                    log.warn("没有查询到商品信息,id:" + id);
+                    return null;
+                }
+                checkFlash(id, productInfo);
+                redisOpsUtil.set(RedisKeyPrefixConst.PRODUCT_DETAIL_CACHE + id, productInfo, 3600, TimeUnit.SECONDS);
+                if (lock.isLocked()) {
+                    lock.unlock();
+                }
+            } else {
+                Thread.sleep(5000);
+                return getProductInfo2(id);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            if (lock.isLocked()) {
+                lock.unlock();
+            }
         }
-        checkFlash(id, productInfo);
-        redisOpsUtil.set(RedisKeyPrefixConst.PRODUCT_DETAIL_CACHE + id, productInfo, 3600, TimeUnit.SECONDS);
+
         return productInfo;
     }
+
+    /**
+     * 测试无参trylock方法
+     * @param id
+     * @return
+     */
+    public PmsProductParam getProductInfo4(Long id) {
+        String uuid= UUID.randomUUID().toString();
+        PmsProductParam productInfo = null;
+        //从缓存Redis里找
+        productInfo = redisOpsUtil.get(RedisKeyPrefixConst.PRODUCT_DETAIL_CACHE + id, PmsProductParam.class);
+        if (null != productInfo) {
+            redisOpsUtil.incr(PRODUCT_CACHE_PREFIX+id+":beforelock:return");
+            return productInfo;
+        }
+        redisOpsUtil.incr(PRODUCT_CACHE_PREFIX+id+":beforelock");
+        RLock lock = redisson.getLock(PRODUCT_CACHE_PREFIX + id);
+        log.info("线程尝试获取锁：{}，时间：{}",uuid, LocalDateTime.now());
+        //此处会有多个线程获得锁。查询数据库会走两次
+        if (lock.tryLock()) {
+            redisOpsUtil.incr(PRODUCT_CACHE_PREFIX+id+":holdlock");
+            log.info("查询走数据库，商品：{}，uuid：{}，时间：{}" , id,uuid,LocalDateTime.now());
+            productInfo = portalProductDao.getProductInfo(id);
+            if (null == productInfo) {
+                log.warn("没有查询到商品信息,id:" + id);
+                return null;
+            }
+            checkFlash(id, productInfo);
+            redisOpsUtil.set(RedisKeyPrefixConst.PRODUCT_DETAIL_CACHE + id, productInfo, 3600, TimeUnit.SECONDS);
+            if (lock.isLocked()) {
+                log.info("锁释放，商品：{}，uuid：{},时间：{}" , id,uuid,LocalDateTime.now());
+                lock.unlock();
+            }
+        } else {
+            redisOpsUtil.incr(PRODUCT_CACHE_PREFIX+id+":holdlockfailed");
+            productInfo = redisOpsUtil.get(RedisKeyPrefixConst.PRODUCT_DETAIL_CACHE + id, PmsProductParam.class);
+        }
+        return productInfo;
+    }
+
 
     /**
      * 获取商品详情信息 分布式锁、 本地缓存、redis缓存
